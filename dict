@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+const args = process.argv;
+const commands = ['def', 'syn', 'ant', 'ex', 'dict', 'play'];
+
+switch(args[2]) {
+    case 'def':
+        break;
+    case 'syn':
+        break;
+    case 'ant':
+        break;
+    case 'ex':
+        break;
+    case 'dict':
+        break;
+    case 'play':
+        break;
+    case '':
+        console.log('hi')
+        break;
+    default:
+        console.log('invalid command')
+}
