@@ -1,10 +1,20 @@
 #!/usr/bin/env node
 
 const axios = require('axios');
+const readline = require('readline');
+
 const env = require('./config/env')
 
 const args = process.argv;
-const commands = ['def', 'syn', 'ant', 'ex', 'dict', 'play'];
+
+
+const readlineInterface = readline.createInterface(process.stdin, process.stdout);
+
+const input = (questionText) => {
+    return new Promise((resolve, reject) => {
+      readlineInterface.question(questionText, resolve);
+    });
+  }
 
 const apiReq = (key, word) => {
     return  axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key);
@@ -12,7 +22,7 @@ const apiReq = (key, word) => {
 
 switch(args[2]) {
     case 'def':
-       apiReq('definitions',args[3])
+        apiReq('definitions',args[3])
             .then(res =>{
                 console.log(res.data)
             })
@@ -41,14 +51,101 @@ switch(args[2]) {
             })
         break;
     case 'dict':
-
+        apiReq('definitions', arg[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
+        apiReq('relatedWords', arg[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
+        apiReq('examples', arg[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
         break;
     case 'play':
+        axios.get(env.host+'words/randomWord?api_key='+env.api_key)
+            .then(res =>{
+                const word = res.data.word;
+                apiReq('definitions', word)
+                    .then(async res =>{
+                        const def = res.data;
+                        console.log(def[0].text)
+                        let inputword = await input("Can You guess this word? \n")
+                        if(inputword === word) {
+                            console.log("Good Job"); 
+                        } else {
+                            let flag = 0;
+                            while(true) {
+                                if(flag === 1) {
+                                    break;
+                                } else {
+                                    console.log("Enter 1 to try again, 2 for hint, 3 to quit\n");
+                                    let choice = await input('');
+                                    choice = Number(choice);
+                                    switch(choice) {
+                                        case 1:
+                                            console.log("Let's try again");
+                                            let wordinput = await input("Enter Your Word again\n");
+                                            if(word === wordinput) {
+                                                console.log("Good Job Finally!!")
+                                                flag = 1;
+                                            } else {
+                                                console.log("That's incorrect.")
+                                            }
+                                            break;
+                                        case 2: 
+                                            console.log("Lets see what we have for hint");
+                                            break;
+                                        case 3: 
+                                            flag  = 1;
+                                            console.log("you quit");
+                                            break;
+                                    }
+                                }
+                            }
+                            
+                        }
+
+                        process.exit();
+                        // process.stdin.once('data', (data) =>{
+                        //     if(data === word){
+                        //         console.log("Good Job");
+                        //     } else {
+                        //             console.log("Enter 1 to try again, 2 for hint, 3 to quit");
+                        //             process.stdin.on('choice', (choice) => {
+                        //                 console.log(typeof(choice))
+                        //                 switch(choice){
+                        //                     case 3: 
+                        //                         console.log("you quit");
+                        //                         break;
+                        //                 }
+                        //             })
+                        //         }
+                        //         process.exit();
+                        // });        
+                    })
+                    .catch(err=> {
+                        console.log(err.response.data)
+                    })
+            
+                
+            })
+            .catch(err => {
+                console.log(err.response.data)
+            })
         break;
-    case '':
-        console.log('hi')
-        break;
-    default:
+    case undefined:
         axios.get(env.host+'words/randomWord?api_key='+env.api_key)
             .then(res =>{
                 console.log(res.data)
@@ -73,6 +170,29 @@ switch(args[2]) {
                     .catch(err=> {
                         console.log(err.response.data)
                     })
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
+        break;
+    default:
+        apiReq('definitions', arg[2])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
+        apiReq('relatedWords', arg[2])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
+        apiReq('examples', arg[2])
+            .then(res =>{
+                console.log(res.data)
             })
             .catch(err=> {
                 console.log(err.response.data)
