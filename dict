@@ -1,18 +1,47 @@
 #!/usr/bin/env node
 
+const axios = require('axios');
+const env = require('./config/env')
+
 const args = process.argv;
 const commands = ['def', 'syn', 'ant', 'ex', 'dict', 'play'];
 
+const apiReq = (key, word) => {
+    return  axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key);
+}
+
 switch(args[2]) {
     case 'def':
+       apiReq('definitions',args[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
         break;
     case 'syn':
+        apiReq('relatedWords',args[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
         break;
     case 'ant':
         break;
     case 'ex':
+        apiReq('examples',args[3])
+            .then(res =>{
+                console.log(res.data)
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
         break;
     case 'dict':
+
         break;
     case 'play':
         break;
@@ -20,5 +49,32 @@ switch(args[2]) {
         console.log('hi')
         break;
     default:
-        console.log('invalid command')
+        axios.get(env.host+'words/randomWord?api_key='+env.api_key)
+            .then(res =>{
+                console.log(res.data)
+                apiReq('definitions', res.data.word)
+                    .then(res =>{
+                        console.log(res.data)
+                    })
+                    .catch(err=> {
+                        console.log(err.response.data)
+                    })
+                apiReq('relatedWords', res.data.word)
+                    .then(res =>{
+                        console.log(res.data)
+                    })
+                    .catch(err=> {
+                        console.log(err.response.data)
+                    })
+                apiReq('examples', res.data.word)
+                    .then(res =>{
+                        console.log(res.data)
+                    })
+                    .catch(err=> {
+                        console.log(err.response.data)
+                    })
+            })
+            .catch(err=> {
+                console.log(err.response.data)
+            })
 }
