@@ -7,15 +7,6 @@ const env = require('./config/env')
 
 const args = process.argv;
 
-
-const readlineInterface = readline.createInterface(process.stdin, process.stdout);
-
-const input = (questionText) => {
-    return new Promise((resolve, reject) => {
-      readlineInterface.question(questionText, resolve);
-    });
-  }
-
 const apiReq = (key, word) => {
     return axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key);
 }
@@ -34,81 +25,136 @@ const apiReqAsync = (key, word) => {
 const nextPermut = (word) => {
     if (word.length < 2) 
         return word;
-
     let permutations = [];
-
     for (let i=0; i<word.length; i++) {
         let char = word[i];
-
         if (word.indexOf(char) != i)
             continue;
-
         const remainingString = word.slice(0,i) + word.slice(i+1, word.length);
-
         for (let subPermutation of nextPermut(remainingString))
             permutations.push(char + subPermutation)
     }
     return permutations;
 }
 
+const All = (word) => {
+    apiReq('definitions',word)
+        .then(res =>{
+            console.log(`The definition for the word ${word} are`)
+            console.log(definitionArray(res.data));
+        })
+        .catch(err=> {
+            console.log("Sorry Word not found in dictionary")
+        })
+    apiReq('relatedWords',word)
+        .then(res =>{
+            if(res.data.length > 1) {
+                console.log(`The synonyms for ${word} are`)
+                console.log(JSON.stringify(res.data[1].words));
+            } else {
+                console.log(`The synonyms for ${word} are`)
+                console.log(JSON.stringify(res.data[0].words))
+            }
+        })
+        .catch(err=> {
+            console.log("Sorry Word not found in dictionary")
+        })
+        apiReq('relatedWords',word)
+            .then(res =>{
+                if(res.data.length > 1) {
+                    console.log(`The antonyms for ${word} are`)
+                    console.log(JSON.stringify(res.data[0].words));
+                } else {
+                    console.log("Sorry We cannot find Antonym for the word in dictionary")
+                }
+            })
+            .catch(err=> {
+                console.log("Sorry Word not found in dictionary")
+            })
+
+            apiReq('examples',word)
+            .then(res =>{
+                console.log(`The examples for the word ${word} are`)
+                console.log(definitionArray(res.data.examples))
+            })
+            .catch(err=> {
+                console.log("Sorry Word not found in dictionary")
+            })
+}
+
+let definitionArray = (def) => {
+    let arr = [];
+    for(let i of def) {
+        arr.push(i.text);
+    }
+    return arr;
+}
+
+
 switch(args[2]) {
     case 'def':
         apiReq('definitions',args[3])
             .then(res =>{
-                console.log(res.data)
+                console.log(`The definition for the word ${args[3]} are`)
+                console.log(definitionArray(res.data));
             })
             .catch(err=> {
-                console.log(err.response.data)
+                console.log("Sorry Word not found in dictionary")
             })
         break;
     case 'syn':
         apiReq('relatedWords',args[3])
             .then(res =>{
-                console.log(res.data)
+                if(res.data.length > 1) {
+                    console.log(`The synonyms for ${args[3]} are`)
+                    console.log(JSON.stringify(res.data[1].words));
+                } else {
+                    console.log(`The synonyms for ${args[3]} are`)
+                    console.log(JSON.stringify(res.data[0].words))
+                }
             })
             .catch(err=> {
-                console.log(err.response.data)
+                console.log("Sorry Word not found in dictionary")
             })
         break;
     case 'ant':
+        apiReq('relatedWords',args[3])
+            .then(res =>{
+                if(res.data.length > 1) {
+                    console.log(`The antonyms for ${args[3]} are`)
+                    console.log(JSON.stringify(res.data[0].words));
+                } else {
+                    console.log("Sorry We cannot find Antonym for the word in dictionary")
+                }
+            })
+            .catch(err=> {
+                console.log("Sorry Word not found in dictionary")
+            })
         break;
     case 'ex':
         apiReq('examples',args[3])
             .then(res =>{
-                console.log(res.data)
+                console.log(`The examples for the word ${args[3]} are`)
+                console.log(definitionArray(res.data.examples))
             })
             .catch(err=> {
-                console.log(err.response.data)
+                console.log("Sorry Word not found in dictionary")
             })
         break;
     case 'dict':
-        apiReq('definitions', arg[3])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
-        apiReq('relatedWords', arg[3])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
-        apiReq('examples', arg[3])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
+        All(arg[3]);
         break;
     case 'play':
+        const readlineInterface = readline.createInterface(process.stdin, process.stdout);
+
+        const input = (questionText) => {
+            return new Promise((resolve, reject) => {
+            readlineInterface.question(questionText, resolve);
+            });
+        }
         axios.get(env.host+'words/randomWord?api_key='+env.api_key)
             .then(res =>{
                 const word = res.data.word;
-                console.log(word);
                 let allPermut = [];
                 let permutations = nextPermut(word);
                 for (permutation of permutations)
@@ -119,7 +165,6 @@ switch(args[2]) {
                         let wordDefIndex = 0;
                         console.log(def[wordDefIndex++].text)
                         let relatedWords = await apiReqAsync('relatedWords', word);
-                        console.log(relatedWords.data)
                         let synonyms, antonyms;
                         if(relatedWords.data.length > 1) {
                             antonyms = relatedWords.data[0].words;
@@ -219,65 +264,24 @@ switch(args[2]) {
                         process.exit();        
                     })
                     .catch(err=> {
-                        console.log(err)
+                        console.log("Sorry Word not found in dictionary")
                     })
             
                 
             })
             .catch(err => {
-                console.log(err)
+                console.log("Sorry Word not found in dictionary")
             })
         break;
     case undefined:
         axios.get(env.host+'words/randomWord?api_key='+env.api_key)
             .then(res =>{
-                console.log(res.data)
-                apiReq('definitions', res.data.word)
-                    .then(res =>{
-                        console.log(res.data)
-                    })
-                    .catch(err=> {
-                        console.log(err.response.data)
-                    })
-                apiReq('relatedWords', res.data.word)
-                    .then(res =>{
-                        console.log(res.data)
-                    })
-                    .catch(err=> {
-                        console.log(err.response.data)
-                    })
-                apiReq('examples', res.data.word)
-                    .then(res =>{
-                        console.log(res.data)
-                    })
-                    .catch(err=> {
-                        console.log(err.response.data)
-                    })
+                All(res.data.word)
             })
             .catch(err=> {
-                console.log(err.response.data)
+                console.log("Sorry Word not found in dictionary")
             })
         break;
     default:
-        apiReq('definitions', arg[2])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
-        apiReq('relatedWords', arg[2])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
-        apiReq('examples', arg[2])
-            .then(res =>{
-                console.log(res.data)
-            })
-            .catch(err=> {
-                console.log(err.response.data)
-            })
+        All(args[2])
 }
