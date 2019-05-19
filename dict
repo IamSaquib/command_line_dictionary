@@ -17,7 +17,38 @@ const input = (questionText) => {
   }
 
 const apiReq = (key, word) => {
-    return  axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key);
+    return axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key);
+}
+
+const apiReqAsync = (key, word) => {
+    return new Promise((resolve, reject) => {
+        axios.get(env.host+'word/'+word+`/${key}?api_key=`+env.api_key)
+            .then(data=> {
+                resolve(data)
+            })
+            .catch(err => {
+                reject(err);
+            })
+        })
+}
+const nextPermut = (word) => {
+    if (word.length < 2) 
+        return word;
+
+    let permutations = [];
+
+    for (let i=0; i<word.length; i++) {
+        let char = word[i];
+
+        if (word.indexOf(char) != i)
+            continue;
+
+        const remainingString = word.slice(0,i) + word.slice(i+1, word.length);
+
+        for (let subPermutation of nextPermut(remainingString))
+            permutations.push(char + subPermutation)
+    }
+    return permutations;
 }
 
 switch(args[2]) {
@@ -77,10 +108,26 @@ switch(args[2]) {
         axios.get(env.host+'words/randomWord?api_key='+env.api_key)
             .then(res =>{
                 const word = res.data.word;
+                console.log(word);
+                let allPermut = [];
+                let permutations = nextPermut(word);
+                for (permutation of permutations)
+                    allPermut.push(permutation);
                 apiReq('definitions', word)
                     .then(async res =>{
                         const def = res.data;
-                        console.log(def[0].text)
+                        let wordDefIndex = 0;
+                        console.log(def[wordDefIndex++].text)
+                        let relatedWords = await apiReqAsync('relatedWords', word);
+                        console.log(relatedWords.data)
+                        let synonyms, antonyms;
+                        if(relatedWords.data.length > 1) {
+                            antonyms = relatedWords.data[0].words;
+                            synonyms = relatedWords.data[1].words; 
+                        } else {
+                            synonyms = relatedWords.data[0].words;
+                        }
+                        let synonymIndex = 0, antonymIndex = 0;
                         let inputword = await input("Can You guess this word? \n")
                         if(inputword === word) {
                             console.log("Good Job"); 
@@ -90,13 +137,14 @@ switch(args[2]) {
                                 if(flag === 1) {
                                     break;
                                 } else {
-                                    console.log("Enter 1 to try again, 2 for hint, 3 to quit\n");
+                                    console.log("Enter 1 to try again, 2 for hint, 3 to quit");
                                     let choice = await input('');
+                                    let wordinput;
                                     choice = Number(choice);
                                     switch(choice) {
                                         case 1:
                                             console.log("Let's try again");
-                                            let wordinput = await input("Enter Your Word again\n");
+                                            wordinput = await input("Enter Your Word again\n");
                                             if(word === wordinput) {
                                                 console.log("Good Job Finally!!")
                                                 flag = 1;
@@ -106,6 +154,58 @@ switch(args[2]) {
                                             break;
                                         case 2: 
                                             console.log("Lets see what we have for hint");
+                                            let hint = (antonyms === undefined || antonyms[antonymIndex] === undefined)?Math.floor(Math.random()*3+1):Math.floor(Math.random()*4+1);
+                                            
+                                            switch(hint) {
+                                                case 1: 
+                                                    console.log("The Words are Jumbled can you guess it right?");
+                                                    const randPermut = Math.floor(Math.random()*allPermut.length + 1);
+                                                    console.log(allPermut[randPermut]);
+
+                                                    wordinput = await input("Enter Your Word again\n");
+                                                    if(word === wordinput) {
+                                                        console.log("Good Job Finally!!")
+                                                        flag = 1;
+                                                    } else {
+                                                        console.log("That's incorrect.")
+                                                    }
+                                                    break;
+                                                case 2: 
+                                                    console.log("Let's see if you can get the word from another definition of the word?");
+                                                    console.log(def[wordDefIndex++].text);
+                                                    wordinput = await input("Enter Your Word again\n");
+                                                    if(word === wordinput) {
+                                                        console.log("Good Job Finally!!")
+                                                        flag = 1;
+                                                    } else {
+                                                        console.log("That's incorrect.")
+                                                    }
+                                                    break;
+                                                case 4:
+                                                    console.log('Given are the antonyms of the word. Can you guess it now?')
+                                                    
+                                                    console.log(antonyms[antonymIndex++])
+                                                    wordinput = await input("Enter Your Word again\n");
+                                                    if(word === wordinput) {
+                                                        console.log("Good Job Finally!!")
+                                                        flag = 1;
+                                                    } else {
+                                                        console.log("That's incorrect.")
+                                                    }
+                                                    break;
+                                                case 3: 
+                                                    console.log('Given are the synonyms of the word. Can you guess it now?')
+                                                    
+                                                    console.log(synonyms[synonymIndex++])
+                                                    wordinput = await input("Enter Your Word again\n");
+                                                    if(word === wordinput) {
+                                                        console.log("Good Job Finally!!")
+                                                        flag = 1;
+                                                    } else {
+                                                        console.log("That's incorrect.")
+                                                    }   
+                                                   break;
+                                            }
                                             break;
                                         case 3: 
                                             flag  = 1;
@@ -116,33 +216,16 @@ switch(args[2]) {
                             }
                             
                         }
-
-                        process.exit();
-                        // process.stdin.once('data', (data) =>{
-                        //     if(data === word){
-                        //         console.log("Good Job");
-                        //     } else {
-                        //             console.log("Enter 1 to try again, 2 for hint, 3 to quit");
-                        //             process.stdin.on('choice', (choice) => {
-                        //                 console.log(typeof(choice))
-                        //                 switch(choice){
-                        //                     case 3: 
-                        //                         console.log("you quit");
-                        //                         break;
-                        //                 }
-                        //             })
-                        //         }
-                        //         process.exit();
-                        // });        
+                        process.exit();        
                     })
                     .catch(err=> {
-                        console.log(err.response.data)
+                        console.log(err)
                     })
             
                 
             })
             .catch(err => {
-                console.log(err.response.data)
+                console.log(err)
             })
         break;
     case undefined:
