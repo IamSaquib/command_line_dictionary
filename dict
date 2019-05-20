@@ -40,7 +40,7 @@ const nextPermut = (word) => {
 const All = (word) => {
     apiReq('definitions',word)
         .then(res =>{
-            console.log(`The definition for the word ${word} are`)
+            console.log(`The definitions for the word ${word} are`)
             console.log(definitionArray(res.data));
         })
         .catch(err=> {
@@ -95,7 +95,7 @@ switch(args[2]) {
     case 'def':
         apiReq('definitions',args[3])
             .then(res =>{
-                console.log(`The definition for the word ${args[3]} are`)
+                console.log(`The definitions for the word ${args[3]} are`)
                 console.log(definitionArray(res.data));
             })
             .catch(err=> {
