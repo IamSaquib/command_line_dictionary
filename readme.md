@@ -1,8 +1,8 @@
-#Command Line Dictionary 
+# Command Line Dictionary 
 
 It's a command line tool written in NodeJS which gives output to definitions, synonyms, antonyms and examples to a word. Also there is a command to play game with words where user has to guess word, if failed can ask for hint. The dictionary feature is implemented by using api calls to [Fourty Two Words](https://fourtytwowords.herokuapp.com)
 
-##Installation
+## Installation
 
 Use the package manager [NPM](https://www.npmjs.com/) to install the node_modules
 
@@ -12,7 +12,7 @@ Give execution permission to the file dict so that it can be executed.
 
 ```chmod +x ./dict```
 
-##Usage
+## Usage
 
 API endpoints for the CLI tool
 
