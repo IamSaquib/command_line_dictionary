@@ -12,6 +12,21 @@ Give execution permission to the file dict so that it can be executed.
 
 ```chmod +x ./dict```
 
+Environment variables are stored in 
+
+```config/env.js file```
+
+Content of this file is 
+
+```Javascript
+const api_key = 'XXXX';
+const host = 'https://fourtytwowords.herokuapp.com/';
+module.exports = {
+    api_key,
+    host
+}
+```
+
 ## Usage
 
 API endpoints for the CLI tool
